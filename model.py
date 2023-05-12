@@ -128,7 +128,7 @@ class CustomMultiLossLayer(Layer):
         # We won't actually use the output.
         return K.concatenate(inputs, -1)
 
-def create_train_model(pred_model):
+def create_train_model(pred_model, input_shape):
     # inp = Input(shape=(window_size, 6), name='inp')
     # y1_pred, y2_pred = pred_model(inp)
     x1 = Input(input_shape, name='x1')
@@ -145,15 +145,15 @@ def create_train_model(pred_model):
     return train_model
 
 
-def Train_Model():
-    # LSTM Model
-    # input size is 7 (IMU data + frequency/sampling rate) and output size is 4 quaternion (roll and pitch)
+def create_pred_model(input_shape):
     inp = keras.Input(input_shape)
-    x1 = LSTM(128, return_sequences=True)(inp)
+    CNN = Conv2D(64, (3, 3), activation='relu')(inp)
+    CNN = MaxPooling2D(pool_size=(3, 3))(CNN)
+    CNN = Conv2D(64, (3, 3), activation='relu')(CNN)
+    CNN = MaxPooling2D(pool_size=(3, 3))(CNN)
+    x1 = LSTM(128, return_sequences=True)(CNN)
     d1 = Dropout(0.2)(x1)
-    x2 = LSTM(128, return_sequences=True)(d1)
-    d2 = Dropout(0.2)(x2)
-    y1 = LSTM(128)(d2)
+    y1 = LSTM(128)(d1)
     y1d = Dropout(0.2)(y1)
     y2 = LSTM(128)(d2)
     y2d = Dropout(0.2)(y2)
@@ -161,6 +161,4 @@ def Train_Model():
     ori = Dense(4, activation='linear')(y2d)
     model = keras.Model(inputs=inp, outputs=[pose, ori])
     model.summary()
-    train_model = create_train_model(model)
-    train_model.summary()
     return train_model
