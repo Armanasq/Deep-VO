@@ -1,3 +1,30 @@
+from keras.layers import *
+from keras.callbacks import *
+from keras.regularizers import *
+from keras.losses import *
+from keras.models import *
+
+from tensorflow.keras import backend as k
+from keras.initializers import Constant
+from keras import backend as K
+from tcn import TCN
+from fileinput import filename
+from numba import cuda
+from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import tensorflow as tf
+import pandas as pd
+import random as rn
+import numpy as np
+import argparse
+import math
+import time
+import os
+from symbol import import_from
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['PYTHONHASHSEED'] = '0'
+
 def quaternion_angle(y_true, y_pred):
     """
     The function takes in two quaternions, normalizes the predicted quaternion, and then calculates the
@@ -101,3 +128,39 @@ class CustomMultiLossLayer(Layer):
         # We won't actually use the output.
         return K.concatenate(inputs, -1)
 
+def create_train_model(pred_model):
+    # inp = Input(shape=(window_size, 6), name='inp')
+    # y1_pred, y2_pred = pred_model(inp)
+    x1 = Input(input_shape, name='x1')
+    y1_pred, y2_pred = pred_model(x1)
+
+    y1_true = Input(shape=(3,), name='y1_true')
+    y2_true = Input(shape=(4,), name='y2_true')
+
+    out = CustomMultiLossLayer(nb_outputs=2)(
+        [y1_true, y2_true, y1_pred, y2_pred])
+    # train_model = Model([inp, y1_true, y2_true], out)
+    train_model = Model([x1, y1_true, y2_true], out)
+    train_model.summary()
+    return train_model
+
+
+def Train_Model():
+    # LSTM Model
+    # input size is 7 (IMU data + frequency/sampling rate) and output size is 4 quaternion (roll and pitch)
+    inp = keras.Input(input_shape)
+    x1 = LSTM(128, return_sequences=True)(inp)
+    d1 = Dropout(0.2)(x1)
+    x2 = LSTM(128, return_sequences=True)(d1)
+    d2 = Dropout(0.2)(x2)
+    y1 = LSTM(128)(d2)
+    y1d = Dropout(0.2)(y1)
+    y2 = LSTM(128)(d2)
+    y2d = Dropout(0.2)(y2)
+    pose = Dense(3, activation='linear')(y1d)
+    ori = Dense(4, activation='linear')(y2d)
+    model = keras.Model(inputs=inp, outputs=[pose, ori])
+    model.summary()
+    train_model = create_train_model(model)
+    train_model.summary()
+    return train_model
