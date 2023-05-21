@@ -1,4 +1,4 @@
-def Quat_error_angle(y_true, y_pred):
+def quaternion_angle(y_true, y_pred):
     """
     The function takes in two quaternions, normalizes the predicted quaternion, and then calculates the
     angle between the two quaternions
@@ -16,7 +16,7 @@ def Quat_error_angle(y_true, y_pred):
     return tf.clip_by_value(angle, -1e3, 1e3)
 
 
-def Quat_mult(y_true, y_pred):
+def quaternion_multiplicative_error(y_true, y_pred):
     """
     The function takes in two quaternions, normalizes the first one, and then multiplies the two
     quaternions together.
@@ -51,11 +51,9 @@ def Quat_mult(y_true, y_pred):
 
 
 def quaternion_mean_multiplicative_error(y_true, y_pred):
-    return tf.reduce_mean(Quat_mult(y_true, y_pred))
+    return tf.reduce_mean(quaternion_multiplicative_error(y_true, y_pred))
 
 # Custom loss layer
-
-
 class CustomMultiLossLayer(Layer):
     def __init__(self, nb_outputs=2, **kwargs):
         # def __init__(self, nb_outputs=3, **kwargs):
