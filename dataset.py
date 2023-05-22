@@ -61,10 +61,3 @@ def load_dataset():
     return pose, quat, images
     
     
-mode ='val'
-
-pose, quat, images  =  load_dataset()
-
-print(quat.shape)
-print(pose.shape)
-print(len(images))
